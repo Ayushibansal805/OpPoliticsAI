@@ -8,7 +8,7 @@ Instead of simply displaying business analytics, OpsPilot AI combines machine le
 
 **Project type:** AI/ML + Full-Stack Development + Decision Optimisation  
 **Status:** In development  
-**Team size:** 3 members
+**Team size:** 4 members
 
 ---
 
@@ -528,7 +528,7 @@ Install:
 ### Step 1: Clone the repository
 
 ```bash
-git clone <YOUR_GITHUB_REPOSITORY_URL>
+git clone [<YOUR_GITHUB_REPOSITORY_URL>](https://github.com/IshikaGarg787/OpsPilot-AI)
 cd opspilot-ai
 ```
 
