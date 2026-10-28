@@ -1,0 +1,15 @@
+{
+  "name": "opspilot-ai",
+  "private": true,
+  "version": "0.1.0",
+  "description": "OpsPilot AI full-stack operations intelligence platform",
+  "scripts": {
+    "install:all": "npm install && npm --prefix server install && npm --prefix client install",
+    "dev": "concurrently -n ML,API,WEB -c magenta,cyan,green \"venv\\Scripts\\python.exe -m uvicorn ml.resolution_api:app --reload --port 8000\" \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
+    "build": "npm --prefix server run build && npm --prefix client run build",
+    "test": "npm --prefix server test"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

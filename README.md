@@ -8,7 +8,7 @@ Instead of simply displaying business analytics, OpsPilot AI combines machine le
 
 **Project type:** AI/ML + Full-Stack Development + Decision Optimisation  
 **Status:** In development  
-**Team size:** 4 members
+**Team size:** 3 members
 
 ---
 
@@ -219,185 +219,24 @@ For example, final resolution time, final status, and future assignment changes 
 The application follows a modular architecture separating the user interface, API layer, intelligence engine, decision engine, and database.
 
 ```mermaid
-flowchart TD
-    U[Operations Manager] --> FE[React + TypeScript Dashboard]
-    FE -->|HTTPS / REST API| API[FastAPI Backend]
-
-    DATA[Help Desk Dataset / CSV Upload] --> ING[Data Ingestion and Validation]
-    ING --> DB[(PostgreSQL)]
-    ING --> ML[ML Training Pipeline]
-
-    API --> DB
-    API --> PRED[Prediction Service]
-    API --> OPT[Decision Optimisation Engine]
-
-    ML --> PRED
-    PRED --> EX[Risk Scores and Explanations]
-    EX --> OPT
-
-    OPT --> SIM[Baseline Comparison and Simulation]
-    SIM --> DB
-    DB --> API
-    API --> FE
+flowchart LR
+  Browser[React + Vite] -->|HTTP-only session / REST| API[Express API]
+  API --> DB[(MongoDB)]
+  API -->|internal JSON| ML[FastAPI model service]
+  ML --> Artifact[(Saved scikit-learn pipeline)]
+  API --> Browser
 ```
 
-### Component responsibilities
+The browser calls only Express. MongoDB and the model artifact are server-side concerns. The API saves a prediction only after it validates the model response; model failures never become fake results.
 
-**Frontend**
+## Stack and structure
 
-Displays operational metrics, ticket risk, explanations, recommendations, and evaluation results.
-
-**Backend API**
-
-Validates requests, retrieves records, calls prediction and optimisation modules, and returns structured responses.
-
-**ML pipeline**
-
-Prepares data, trains models, evaluates predictions, and saves model artefacts.
-
-**Prediction service**
-
-Loads the selected trained model and produces predictions for valid input records.
-
-**Decision engine**
-
-Uses risk scores and operational constraints to recommend a feasible prioritisation or assignment plan.
-
-**Evaluation engine**
-
-Runs comparable baseline and proposed policies against the same scenario and calculates performance metrics.
-
-**Database**
-
-Stores application records, prediction results, recommendation history, approvals, and evaluation summaries.
-
----
-
-## 6. Technology Stack
-
-| Layer | Technology | Purpose |
-|---|---|---|
-| Frontend | React | Interactive user interface |
-| Language | TypeScript | Type safety in frontend development |
-| Styling | Tailwind CSS | Responsive dashboard design |
-| Visualisation | Recharts | Charts and performance comparisons |
-| Backend | Python + FastAPI | REST APIs and service orchestration |
-| Data processing | Pandas, NumPy | Cleaning, transformations, and analysis |
-| ML baselines | Scikit-learn | Preprocessing, classification, regression, and metrics |
-| Advanced ML | XGBoost or LightGBM | Risk prediction and optional regression |
-| Explainability | SHAP or reason codes | Explanation of model predictions |
-| Optimisation | Google OR-Tools | Constraint-aware decision optimisation |
-| Database | PostgreSQL | Persistent application data |
-| Database access | SQLAlchemy | Database models and queries |
-| API validation | Pydantic | Request and response validation |
-| Testing | Pytest | Backend, ML, and optimisation tests |
-| API testing | Postman | Endpoint verification |
-| Version control | Git + GitHub | Collaboration and code review |
-| Containerisation | Docker | Reproducible deployment |
-| Frontend hosting | Vercel | Frontend delivery |
-| Backend hosting | Python-compatible application host | FastAPI and ML inference |
-
-The exact dependency versions will be pinned in the project configuration after the initial environment is tested.
-
----
-
-## 7. Machine Learning Approach
-
-We will begin with one reliable prediction task and add a second model only if the data supports it.
-
-### Model 1: Ticket Resolution Risk Prediction
-
-**Goal:** Estimate whether a ticket is likely to exceed a defined resolution-time target.
-
-Candidate algorithms:
-
-- Logistic Regression — interpretable baseline.
-- Random Forest — nonlinear comparison model.
-- XGBoost or LightGBM — advanced candidate model.
-
-The final model will be selected using validation performance, calibration, reliability, and operational usefulness rather than model complexity alone.
-
-**Expected output:**
-
-```json
-{
-  "ticket_id": "example-ticket-id",
-  "risk_probability": 0.82,
-  "risk_category": "high",
-  "explanation": [
-    "Deadline approaching",
-    "High historical workload for the relevant category"
-  ]
-}
-```
-
-This is an illustrative response format, not a measured prediction from the dataset. The explanation must be generated from actual model inputs and supported evidence.
-
-### Model 2: Resolution-Time Prediction (Optional)
-
-**Goal:** Estimate the time required to resolve a ticket.
-
-Candidate approaches:
-
-- Historical median resolution time as a baseline.
-- Random Forest Regressor.
-- XGBoost Regressor.
-
-This model will be added only if the dataset has sufficient reliable resolution-time labels and useful features available at prediction time.
-
-### Model training workflow
-
-1. Inspect and validate the data.
-2. Define the prediction target.
-3. Establish a simple baseline.
-4. Create leakage-safe features.
-5. Train candidate models.
-6. Tune using training and validation data.
-7. Evaluate on an untouched test set.
-8. Save the selected model and preprocessing pipeline.
-9. Integrate inference with FastAPI.
-10. Monitor prediction quality and data drift where suitable.
-
-### Evaluation metrics
-
-For risk classification:
-
-- Precision.
-- Recall.
-- F1-score.
-- PR-AUC.
-- ROC-AUC as a supplementary metric.
-- Brier score or other probability-calibration measures.
-
-For resolution-time regression:
-
-- Mean Absolute Error (MAE).
-- Root Mean Squared Error (RMSE).
-
-The final report will include baseline and selected-model results, class distribution, the test methodology, and limitations. No performance score will be claimed before the corresponding experiment has been run.
-
----
-
-## 8. Decision Optimisation Engine
-
-The decision engine turns predictions into proposed actions.
-
-A prediction model tells us which tickets are risky. The optimiser determines which available action best satisfies the chosen operational objective.
-
-### Inputs
-
-- Ticket priority and urgency.
-- Predicted risk.
-- Estimated business impact.
-- Required skills, if available.
-- Employee availability and capacity, if available.
-- Assignment eligibility and operational rules.
-
-### Objective
-
-Minimise the expected operational cost of the proposed plan, including overdue work and priority-weighted risk, while respecting the defined constraints.
-
-A simplified objective can be represented as:
+| Service | Stack | Responsibility |
+| --- | --- | --- |
+| `client` | React, TypeScript, Vite, Recharts, Framer Motion, Lucide | Marketing site and workspace UI |
+| `server` | Node.js, Express, TypeScript, Mongoose, Argon2id | Auth, persistence, validation, orchestration |
+| `ml` | Python, FastAPI, pandas, scikit-learn, joblib | Load the real pipeline and return estimates |
+| Database | MongoDB | Users, sessions, and prediction history |
 
 ```text
 Minimise:
@@ -528,7 +367,7 @@ Install:
 ### Step 1: Clone the repository
 
 ```bash
-git clone https://github.com/IshikaGarg787/OpsPilot-AI
+git clone <YOUR_GITHUB_REPOSITORY_URL>
 cd opspilot-ai
 ```
 
@@ -543,427 +382,163 @@ python -m venv .venv
 Activate it on Windows PowerShell:
 
 ```powershell
-.\.venv\Scripts\Activate.ps1
+node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
 ```
 
-On macOS or Linux:
+Put it in `server/.env` as `SESSION_SECRET`. Local defaults are:
 
-```bash
-source .venv/bin/activate
+```dotenv
+# server/.env
+NODE_ENV=development
+PORT=5000
+CLIENT_ORIGIN=http://localhost:5173
+MONGODB_URI=mongodb://127.0.0.1:27017/opspilot
+ML_SERVICE_URL=http://127.0.0.1:8000
+COOKIE_SECURE=false
+ML_ARTIFACT_DIR=../ml/artifacts/resolution
+
+# client/.env
+VITE_API_BASE_URL=http://localhost:5000/api/v1
 ```
 
-### Step 3: Install backend dependencies
+`.env` files are ignored by Git. See the service-specific examples for the complete variable list.
 
-After `requirements.txt` has been created:
+## Start locally
 
-```bash
-pip install -r requirements.txt
+Start MongoDB first. A typical local PowerShell setup is:
+
+```powershell
+Get-Service *mongo*
+Start-Service MongoDB
 ```
 
-Core dependencies are expected to include:
+Then start all three application services from the root:
 
-```text
-fastapi
-uvicorn[standard]
-pandas
-numpy
-scikit-learn
-xgboost
-ortools
-sqlalchemy
-psycopg[binary]
-pydantic-settings
-joblib
-pytest
-```
-
-Add `shap`, database migration tools, and other dependencies only when needed. Pin tested versions before final deployment.
-
-### Step 4: Install frontend dependencies
-
-```bash
-cd frontend
-npm install
-```
-
-### Step 5: Configure environment variables
-
-Create a local `.env` file using `.env.example` as a template. Do not commit actual secrets.
-
-### Step 6: Run the backend
-
-From the project root, with the Python environment active:
-
-```bash
-uvicorn backend.main:app --reload
-```
-
-This command assumes the backend package and imports follow the proposed repository structure. Adjust the import path if the actual implementation differs.
-
-API documentation should be available at:
-
-```text
-http://127.0.0.1:8000/docs
-```
-
-### Step 7: Run the frontend
-
-In a separate terminal:
-
-```bash
-cd frontend
+```powershell
 npm run dev
 ```
 
-Open the local URL printed by Vite.
+This starts FastAPI at `http://localhost:8000`, Express at `http://localhost:5000`, and Vite at `http://localhost:5173`.
 
-### Step 8: Run tests
+To start separately:
 
-```bash
-pytest
+```powershell
+./venv/Scripts/python.exe -m uvicorn ml.resolution_api:app --reload --port 8000
+npm --prefix server run dev
+npm --prefix client run dev
 ```
 
-Run frontend tests and build checks using the scripts defined in `frontend/package.json`.
+## Model contract
 
-> These instructions describe the intended setup. The repository is not considered runnable until the corresponding files, dependencies, configuration, and tests have been implemented and verified.
-
----
-
-## 12. Environment Configuration
-
-Example `.env.example`:
-
-```dotenv
-APP_ENV=development
-DATABASE_URL=postgresql+psycopg://USER:PASSWORD@localhost:5432/opspilot
-MODEL_PATH=ml/artifacts/risk_model.joblib
-CORS_ORIGINS=http://localhost:5173
-```
-
-Replace the database credentials and model path with values appropriate for your environment.
-
-Production secrets should be configured through the hosting provider's secret or environment-variable settings. Never expose database credentials in frontend code.
-
----
-
-## 13. API Design
-
-The following endpoints are the proposed interface between React and FastAPI.
-
-| Method | Endpoint | Purpose |
-|---|---|---|
-| GET | `/health` | Check backend health |
-| GET | `/api/v1/dashboard/summary` | Retrieve dashboard KPIs |
-| GET | `/api/v1/tickets` | Retrieve and filter ticket records |
-| GET | `/api/v1/tickets/{ticket_id}` | Retrieve ticket details |
-| POST | `/api/v1/predictions` | Predict risk for eligible records |
-| POST | `/api/v1/recommendations/generate` | Generate an operational plan |
-| POST | `/api/v1/evaluations/compare` | Compare baseline and proposed policies |
-| GET | `/api/v1/recommendations/history` | Retrieve saved recommendations |
-| POST | `/api/v1/recommendations/{id}/decision` | Record approval or rejection |
-
-The actual API schemas, error responses, validation rules, and authentication requirements will be defined during implementation.
-
-### Example request
+The existing `ml/resolution_predictor.py` is the source of truth. It requires exactly:
 
 ```json
 {
-  "ticket_id": "example-ticket-id"
+  "issue_created": "2024-01-12T09:30:00Z",
+  "issue_priority": "High",
+  "issue_type": "Bug",
+  "issue_proj": "C00d3dzwj28av.ew8x3"
 }
 ```
 
-### Example response
+It derives `created_year`, `created_month`, `created_dayofweek`, `created_hour`, `created_dayofmonth`, and `created_is_weekend` from `issue_created`. No resolution date, final status, future assignment, or other post-resolution field is accepted. FastAPI `/metadata` reads the saved pipeline's actual categories and provides them to React.
+
+The response shape is:
 
 ```json
 {
-  "ticket_id": "example-ticket-id",
-  "risk_probability": 0.82,
-  "risk_category": "high",
-  "model_version": "baseline-v1"
+  "model_id": "resolution-time",
+  "duration": 882.58,
+  "unit": "hours",
+  "prediction_type": "point_estimate",
+  "model_version": "2026-10-26T06:21:01.513056+00:00"
 }
 ```
 
-These examples illustrate the intended contract. They are not evidence that the endpoints or models already exist.
+The number above documents the shape only. The app never displays it as a sample result; real result cards use the current model response.
 
----
+## API
 
-## 14. Evaluation and Performance Metrics
+Routes are under `/api/v1` and use `{ success, data, message }` responses. Authenticated routes use the HTTP-only `ops_session` cookie.
 
-A credible evaluation must demonstrate more than a visually impressive dashboard.
+| Method | Route | Auth | Purpose |
+| --- | --- | --- | --- |
+| GET | `/health` | No | Liveness |
+| GET | `/health/ready` | No | MongoDB and model readiness |
+| POST | `/auth/signup` | No | Create user and session |
+| POST | `/auth/login` | No | Authenticate user |
+| POST | `/auth/logout` | No | Invalidate current session |
+| GET | `/auth/me` | Cookie | Restore session |
+| GET/PATCH | `/users/me` | Cookie | Read/update profile |
+| PATCH | `/users/me/preferences` | Cookie | Save theme preference |
+| GET | `/dashboard/summary` | Cookie | User-scoped KPIs |
+| GET | `/dashboard/activity` | Cookie | User-scoped trends and activity |
+| GET | `/models` | Cookie | Registry and health status |
+| GET | `/models/:modelId` | Cookie | One registry entry |
+| GET | `/models/resolution-time/metadata` | Cookie | Verified schema and metrics |
+| POST | `/predictions/resolution-time` | Cookie | Infer, validate, and persist |
+| GET | `/predictions` | Cookie | Paginated user history |
+| GET | `/predictions/:id` | Cookie | Owned prediction detail |
+| DELETE | `/predictions/:id` | Cookie | Delete owned record |
 
-### Prediction evaluation
+Full examples are in [`docs/API.md`](docs/API.md).
 
-| Metric | Purpose |
-|---|---|
-| Precision | How many predicted high-risk cases are actually positive? |
-| Recall | How many actual positive cases are identified? |
-| F1-score | Balance between precision and recall |
-| PR-AUC | Evaluate classification quality, especially with imbalanced labels |
-| Brier score | Evaluate probability accuracy and calibration |
-| MAE | Measure resolution-time prediction error, if regression is implemented |
+## Historical evaluation evidence
 
-### Decision evaluation
+The UI reads `ml/artifacts/resolution/metrics.json`. The untouched chronological test split contains 9,877 rows:
 
-| Metric | Purpose |
-|---|---|
-| Weighted overdue workload | Measures priority-weighted delayed work |
-| Workload imbalance | Measures how unevenly work is distributed |
-| Constraint violations | Verifies whether the plan respects hard constraints |
-| Assignment validity | Measures whether each proposed assignment is eligible |
-| Objective value | Measures the optimiser's chosen cost under the defined objective |
+- MAE: `692.2123` hours.
+- RMSE: `1215.4779` hours.
+- R²: `-0.0982`.
 
-### Baseline comparison
+These values describe the saved experiment, not live accuracy. The negative R² indicates performance below a mean-prediction reference under that reported evaluation. The model is experimental and does not guarantee an SLA or resolution outcome.
 
-We will compare:
+## Security notes
 
-**Baseline:** Existing or explicitly defined priority-based allocation policy.
+- Passwords are hashed with Argon2id and never returned.
+- Sessions use random opaque tokens stored as HMAC hashes in MongoDB.
+- Cookies are HTTP-only, same-site, and configurable for secure transport.
+- CORS and mutation origin checks use explicit `CLIENT_ORIGIN` values.
+- Auth endpoints and API traffic are rate limited.
+- History and detail queries are scoped to the authenticated user.
+- Request payloads are validated with Zod before orchestration.
+- Secrets, passwords, tokens, and headers are not logged.
 
-**Proposed:** Risk-informed policy using the prediction and optimisation components.
+## Checks
 
-Both policies must use the same initial scenario, task set, capacity assumptions, and evaluation rules.
-
-A proposed policy should be considered better only when the measured objective and relevant operational metrics support that conclusion.
-
-### Reporting requirements
-
-The final report should include:
-
-- Dataset size and class distribution.
-- Prediction target and feature definitions.
-- Train, validation, and test methodology.
-- Baseline and final-model metrics.
-- Optimisation constraints and objective.
-- Baseline vs proposed policy results.
-- Simulation assumptions and limitations.
-
-No performance figures or percentage improvements will be reported until the corresponding experiments have actually been completed.
-
----
-
-## 15. Team Responsibilities
-
-The project is divided into three independent workstreams so the team can develop in parallel.
-
-### Person 1 — AI/ML and Data Intelligence
-
-**Responsibilities**
-
-- Dataset inspection and preprocessing.
-- Exploratory data analysis.
-- Target definition and leakage prevention.
-- Baseline and improved risk-prediction models.
-- Model evaluation and explanation.
-- Optional resolution-time regression.
-
-**Deliverables**
-
-```text
-ml/data_preprocessing.py
-ml/feature_engineering.py
-ml/train.py
-ml/predict.py
-ml/evaluate.py
-ml/artifacts/
+```powershell
+npm --prefix server run build
+npm --prefix server test
+npx --prefix client tsc -b --pretty false
+npm --prefix client run build
+.\venv\Scripts\python.exe -m unittest ml.test_resolution_api
 ```
 
-### Person 2 — Decision Engine and Evaluation
+The end-to-end prediction flow additionally requires MongoDB, FastAPI, and Express to be running.
 
-**Responsibilities**
+## Troubleshooting
 
-- Define the baseline allocation policy.
-- Implement prioritisation rules.
-- Define capacity, eligibility, and skill constraints.
-- Implement heuristic allocation and OR-Tools optimisation.
-- Build the simulation and policy comparison.
-- Validate that proposed allocations satisfy hard constraints.
-
-**Deliverables**
-
-```text
-optimizer/baseline.py
-optimizer/constraints.py
-optimizer/allocate.py
-optimizer/simulator.py
-optimizer/evaluate.py
+```powershell
+Invoke-RestMethod http://localhost:5000/api/v1/health
+Invoke-RestMethod http://localhost:8000/health
+Invoke-RestMethod http://localhost:5000/api/v1/health/ready
 ```
 
-### Person 3 — Frontend, Backend, and Integration
+If readiness returns 503, verify `MONGODB_URI`, `ML_SERVICE_URL`, and `ML_ARTIFACT_DIR`. A missing artifact is reported as unavailable; the app does not substitute a fake model. For port conflicts:
 
-**Responsibilities**
-
-- Build the React dashboard.
-- Implement charts, filters, ticket details, and recommendation views.
-- Develop FastAPI routes and request/response schemas.
-- Integrate the ML and optimisation modules.
-- Implement database persistence.
-- Configure deployment and demo readiness.
-
-**Deliverables**
-
-```text
-frontend/
-backend/main.py
-backend/schemas.py
-backend/routers/
-backend/services/
-backend/database/
+```powershell
+Get-NetTCPConnection -LocalPort 5000,5173,8000 -ErrorAction SilentlyContinue
+Stop-Process -Id <PID>
 ```
 
-### Collaboration workflow
+On machines where Application Control blocks Rollup's native `.node` binary, the client TypeScript check still works with `npx --prefix client tsc -b --pretty false`; production bundling needs an approved Node/Vite dependency installation.
 
-All team members should agree on the dataset, prediction response schema, and optimiser input/output contract before implementation diverges.
+## Future model integration
 
-Use mock predictions and recommendations initially so that frontend development does not depend on the completed ML model. Work in separate Git branches and merge through pull requests.
+The two provisional slots remain `coming_soon` until their real artifacts, input contracts, health checks, and evaluation evidence exist. Follow [`docs/ML_INTEGRATION_GUIDE.md`](docs/ML_INTEGRATION_GUIDE.md) to register a model without changing shared auth, history, navigation, or theme infrastructure.
 
----
+## Related documentation
 
-## 16. Development Roadmap
-
-### Phase 1 — Data and contracts
-
-- Download and inspect the dataset.
-- Confirm the usable fields and prediction target.
-- Establish shared API schemas.
-- Define evaluation and baseline rules.
-
-### Phase 2 — Core intelligence
-
-- Implement preprocessing.
-- Train and evaluate the baseline classifier.
-- Test an advanced candidate model.
-- Implement risk predictions and explanations.
-
-### Phase 3 — Decision engine
-
-- Implement the baseline policy.
-- Add allocation rules and constraints.
-- Build a simulation.
-- Compare baseline and proposed policies.
-
-### Phase 4 — Dashboard integration
-
-- Build the dashboard and ticket table.
-- Integrate prediction and recommendation endpoints.
-- Add policy comparison charts.
-- Add approval and recommendation history.
-
-### Phase 5 — Validation and deployment
-
-- Run backend, ML, and optimiser tests.
-- Validate model and constraint correctness.
-- Test missing, invalid, and unexpected input.
-- Deploy the application.
-- Rehearse the end-to-end demonstration.
-
----
-
-## 17. Deployment
-
-The preferred deployment architecture separates frontend delivery from Python inference.
-
-```text
-User's Browser
-      |
-      v
-React Frontend — Vercel
-      |
-      | HTTPS / REST API
-      v
-Python Backend — Always-running Host
-      |
-      +---- ML Prediction Service
-      |
-      +---- Optimisation Engine
-      |
-      v
-Managed PostgreSQL
-```
-
-### Frontend
-
-Build the React application and deploy it on Vercel.
-
-### Backend
-
-Deploy FastAPI and its required Python dependencies on a host that supports persistent application processes and the resource requirements of the ML and optimisation modules.
-
-### Database
-
-Configure a managed PostgreSQL database and use the production connection string through environment variables.
-
-### Deployment considerations
-
-- Configure CORS for the production frontend domain.
-- Keep database credentials and secrets out of source control.
-- Load the trained model once during application startup when appropriate.
-- Avoid retraining the model during normal prediction requests.
-- Test cold starts, model loading, inference latency, and database connectivity.
-- Verify the hosting provider's pricing, resource limits, and sleep behaviour before the final demonstration.
-
-The frontend and backend can also be deployed together as a Docker-based service if a single application deployment is preferred.
-
----
-
-## 18. Limitations and Future Scope
-
-### Initial limitations
-
-- The selected dataset may not include all information required for a true SLA-breach target.
-- Employee capacity and skill information may require a separate, explicitly labelled simulation configuration.
-- Historical patterns do not necessarily establish causal relationships.
-- Simulated policy improvements do not prove real-world business improvement.
-- Prediction quality may degrade if future operational data differs from the training data.
-
-### Future improvements
-
-- Integrate with real ticketing platforms.
-- Add monitoring for prediction drift and changing workload patterns.
-- Introduce time-series workload forecasting if sufficient timestamped data exists.
-- Add more sophisticated scheduling and resource allocation.
-- Incorporate manager feedback and verified outcomes.
-- Extend the framework to supply chains, inventory, and workforce operations.
-- Add role-based access control and an audit trail for production use.
-
----
-
-## 19. Responsible AI and Data Integrity
-
-OpsPilot AI is intended to support human decisions, not blindly automate them.
-
-The implementation will aim to:
-
-- Use only features available at the defined prediction time.
-- Document missing values, assumptions, and simulated data.
-- Report model performance on held-out data.
-- Explain the factors contributing to predictions.
-- Validate hard constraints before recommending assignments.
-- Avoid treating correlation as proof of causation.
-- Record approvals and rejections for traceability.
-- Avoid claiming business improvements without measured evidence.
-- Protect secrets and limit access to operational data.
-
-Recommendations should remain reviewable by the responsible operations manager.
-
----
-
-## 20. Dataset Attribution
-
-The project uses the following candidate dataset source:
-
-**Help Desk Tickets — Mendeley Data**
-
-https://data.mendeley.com/datasets/btm76zndnt/3
-
-Before redistribution or publication, verify the dataset version, author attribution, and licence information on the source page. Preserve the required attribution and licence notices when using or sharing the data.
-
----
-
-## Final Summary
-
-OpsPilot AI aims to move beyond descriptive dashboards and isolated predictions by connecting machine learning with constraint-aware operational decisions.
-
-Its core workflow is:
-
-**Operational Data → Risk Prediction → Explainable Insights → Decision Optimisation → Baseline Comparison**
-
-The success of the project will be judged by the quality of its data, reliability of its predictions, validity of its recommendations, and evidence that the proposed policy performs better than a clearly defined baseline under comparable conditions.
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — service boundaries and data flow.
+- [`docs/API.md`](docs/API.md) — implemented endpoint contracts.
+- [`docs/ML_INTEGRATION_GUIDE.md`](docs/ML_INTEGRATION_GUIDE.md) — teammate integration contract.
