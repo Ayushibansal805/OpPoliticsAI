@@ -1,4 +1,13 @@
-"""FastAPI adapter for the versioned resolution-time regression artifact."""
+"""FastAPI service adapter for OpsPilot AI Machine Learning Models.
+
+Serves:
+1. Model A: Resolution-Time Regression (point estimates in hours)
+2. Model B: Ticket Delay-Risk Classification (probability, risk band, binary decision, and feature explanations)
+3. Model C: Workload Forecasting (multi-day arrival estimates, 90% prediction intervals, surge flags)
+
+Loads persisted artifacts once at startup and performs low-latency inference.
+Never mutates or retrains artifacts during inference requests.
+"""
 
 from __future__ import annotations
 
@@ -8,9 +17,11 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
 
+from .delay_risk_predictor import DelayRiskPredictor
+from .forecasting_predictor import WorkloadForecastingPredictor
 from .resolution_predictor import (
     DEFAULT_ARTIFACT_PATH,
     V3_METADATA_PATH,
@@ -24,6 +35,7 @@ MODEL_PATH = Path(os.getenv("ML_MODEL_PATH", str(DEFAULT_ARTIFACT_PATH)))
 METADATA_PATH = Path(os.getenv("ML_METADATA_PATH", str(V3_METADATA_PATH)))
 METRICS_PATH = ARTIFACT_DIR / "metrics.json"
 EVALUATION_PATH = MODULE_DIR / "experiments" / "resolution_v3_evaluation.json"
+CANDIDATE_METRICS_PATH = ARTIFACT_DIR / "candidates" / "candidate_metrics.json"
 
 
 class ResolutionPredictionRequest(BaseModel):
@@ -35,12 +47,25 @@ class ResolutionPredictionRequest(BaseModel):
     issue_proj: str = Field(min_length=1, max_length=200)
 
 
+class DelayRiskRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    id: str | None = None
+    issue_created: str = Field(min_length=1, max_length=100)
+    issue_priority: str = Field(min_length=1, max_length=100)
+    issue_type: str = Field(min_length=1, max_length=100)
+    issue_proj: str = Field(min_length=1, max_length=200)
+    issue_reporter: str | None = None
+    threshold: float | None = Field(default=None, ge=0.0, le=1.0)
+
+
 class ResolutionModelRuntime:
     def __init__(self) -> None:
         self.pipeline: Any | None = None
         self.metadata: dict[str, Any] = {}
         self.metrics: dict[str, Any] = {}
         self.evaluation_report: dict[str, Any] = {}
+        self.candidate_metrics: dict[str, Any] = {}
         self.load_error: str | None = None
         self._load()
 
@@ -52,6 +77,8 @@ class ResolutionModelRuntime:
             self.metadata = json.loads(METADATA_PATH.read_text(encoding="utf-8")) if METADATA_PATH.exists() else {}
             self.metrics = json.loads(METRICS_PATH.read_text(encoding="utf-8")) if METRICS_PATH.exists() else {}
             self.evaluation_report = json.loads(EVALUATION_PATH.read_text(encoding="utf-8")) if EVALUATION_PATH.exists() else {}
+            if CANDIDATE_METRICS_PATH.exists():
+                self.candidate_metrics = json.loads(CANDIDATE_METRICS_PATH.read_text(encoding="utf-8"))
         except Exception as exc:
             self.pipeline = None
             self.load_error = str(exc)
@@ -167,23 +194,142 @@ class ResolutionModelRuntime:
         }
 
 
-runtime = ResolutionModelRuntime()
+# Initialize runtimes once at module load
+resolution_runtime = ResolutionModelRuntime()
+delay_risk_predictor = DelayRiskPredictor()
+forecasting_predictor = WorkloadForecastingPredictor()
+
+# For backward compatibility with existing test scripts:
+runtime = resolution_runtime
 PredictionRequest = ResolutionPredictionRequest
-app = FastAPI(title="OpsPilot AI Resolution Model Service", version="0.3.0")
+
+app = FastAPI(title="OpsPilot AI Multi-Model Intelligence Service", version="0.2.0")
 
 
 @app.get("/health")
 def health() -> dict[str, Any]:
-    if not runtime.available:
-        raise HTTPException(status_code=503, detail="The resolution model is unavailable.")
-    return {"status": "available", "service": "resolution-time", "model_id": "resolution-time"}
+    if not resolution_runtime.available and not delay_risk_predictor.available and not forecasting_predictor.available:
+        raise HTTPException(status_code=503, detail="All ML models are currently unavailable.")
+
+    return {
+        "status": "available",
+        "service": "OpsPilot AI Multi-Model Service",
+        "models": {
+            "resolution-time": "available" if resolution_runtime.available else "unavailable",
+            "delay-risk": "available" if delay_risk_predictor.available else "unavailable",
+            "workload-forecasting": "available" if forecasting_predictor.available else "unavailable",
+        },
+    }
 
 
+@app.get("/models")
+def list_models() -> dict[str, Any]:
+    return {
+        "models": [
+            {
+                "id": "resolution-time",
+                "name": "Resolution-Time Prediction",
+                "status": "available" if resolution_runtime.available else "unavailable",
+                "type": "regression",
+                "unit": "hours",
+            },
+            {
+                "id": "delay-risk",
+                "name": "Ticket Delay-Risk Prediction",
+                "status": "available" if delay_risk_predictor.available else "unavailable",
+                "type": "classification",
+                "target": "delayed > 720 hours (30 days)",
+            },
+            {
+                "id": "workload-forecasting",
+                "name": "Workload / Operations Forecasting",
+                "status": "available" if forecasting_predictor.available else "unavailable",
+                "type": "time_series_forecast",
+                "unit": "tickets/day",
+            },
+        ]
+    }
+
+
+# --- Model A: Resolution-Time Endpoints (backward compatible) ---
 @app.get("/metadata")
 def metadata() -> dict[str, Any]:
-    return runtime.metadata_response()
+    return resolution_runtime.metadata_response()
 
 
 @app.post("/predict/resolution-time")
 def predict_resolution(request: ResolutionPredictionRequest) -> dict[str, Any]:
-    return runtime.predict(request)
+    return resolution_runtime.predict(request)
+
+
+# --- Model B: Delay-Risk Endpoints ---
+@app.get("/metadata/delay-risk")
+def delay_risk_metadata() -> dict[str, Any]:
+    if not delay_risk_predictor.available:
+        raise HTTPException(status_code=503, detail="Delay risk model is unavailable.")
+    meta = delay_risk_predictor.metadata
+    bundle = delay_risk_predictor.bundle or {}
+    return {
+        "status": "available",
+        "model_id": "delay-risk",
+        "display_name": "Ticket Delay-Risk Classification",
+        "model_version": bundle.get("model_version", "delay-risk-v3"),
+        "target_definition": meta.get("target", "delayed = 1 if resolution time > 720 hours"),
+        "delay_threshold_hours": bundle.get("threshold_hours", 720.0),
+        "default_decision_threshold": bundle.get("threshold", 0.1842),
+        "risk_bands": {
+            "low": "< 0.40 probability",
+            "medium": "0.40 - 0.70 probability",
+            "high": ">= 0.70 probability",
+        },
+        "operating_thresholds": {
+            "high_recall": {"threshold": 0.1842, "recall": 0.789, "precision": 0.279, "f1": 0.412},
+            "balanced_f1": {"threshold": 0.3130, "recall": 0.789, "precision": 0.345, "f1": 0.482},
+        },
+        "metrics_held_out_test": meta.get("metrics", {}).get("test", {}),
+    }
+
+
+@app.post("/predict/delay-risk")
+def predict_delay_risk(request: DelayRiskRequest) -> dict[str, Any]:
+    if not delay_risk_predictor.available:
+        raise HTTPException(status_code=503, detail="Delay risk model is unavailable.")
+    try:
+        results = delay_risk_predictor.predict(
+            request.model_dump(),
+            threshold=request.threshold,
+            top_k=5,
+        )
+        return {"success": True, "data": results[0]}
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Inference error: {exc}") from exc
+
+
+# --- Model C: Workload Forecasting Endpoints ---
+@app.get("/metadata/workload-forecasting")
+def workload_metadata() -> dict[str, Any]:
+    if not forecasting_predictor.available:
+        raise HTTPException(status_code=503, detail="Workload forecasting model is unavailable.")
+    return {
+        "status": "available",
+        "model_id": "workload-forecasting",
+        "display_name": "Workload / Operations Forecasting",
+        **forecasting_predictor.metadata,
+    }
+
+
+@app.get("/forecast/workload")
+def forecast_workload(
+    horizon: int = Query(default=7, ge=1, le=60, description="Forecast horizon in days (e.g. 7, 14, 30)")
+) -> dict[str, Any]:
+    if not forecasting_predictor.available:
+        raise HTTPException(status_code=503, detail="Workload forecasting model is unavailable.")
+    try:
+        result = forecasting_predictor.predict_forecast(horizon=horizon)
+        return {"success": True, "data": result}
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Forecasting error: {exc}") from exc

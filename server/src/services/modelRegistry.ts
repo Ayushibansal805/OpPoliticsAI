@@ -83,7 +83,34 @@ function readEvaluation() {
 
 export async function listModels() {
   const health = await checkMlHealth();
-  return baseModels.map((model) => model.id === 'resolution-time' ? { ...model, status: health.available ? 'available' : 'unavailable', health: health.data, evaluation: readEvaluation() } : model);
+  const modelsStatus = (health.data as any)?.models || {};
+  return baseModels.map((model) => {
+    if (model.id === 'resolution-time') {
+      return {
+        ...model,
+        status: (modelsStatus['resolution-time'] === 'available' || health.available && !Object.keys(modelsStatus).length ? 'available' : 'unavailable') as ModelStatus,
+        health: health.data,
+        evaluation: readEvaluation(),
+      };
+    }
+    if (model.id === 'operational-risk') {
+      return {
+        ...model,
+        status: (modelsStatus['delay-risk'] === 'available' ? 'available' : 'coming_soon') as ModelStatus,
+        inputSchema: 'issue_created, issue_priority, issue_type, issue_proj, issue_reporter',
+        outputSchema: 'risk_probability, risk_band, predicted_delayed, top_contributing_factors',
+      };
+    }
+    if (model.id === 'workload-forecasting') {
+      return {
+        ...model,
+        status: (modelsStatus['workload-forecasting'] === 'available' ? 'available' : 'coming_soon') as ModelStatus,
+        inputSchema: 'horizon in days (7, 14, 30)',
+        outputSchema: 'forecast, lower_90, upper_90, high_load_flag, weekly_total_tickets',
+      };
+    }
+    return model;
+  });
 }
 
 export async function getModel(modelId: string) {

@@ -42,3 +42,11 @@ export function getMlMetadata() {
 export function predictResolution(payload: Record<string, string>) {
   return request('/predict/resolution-time', { method: 'POST', body: JSON.stringify(payload) }, 10000);
 }
+
+export function predictDelayRisk(payload: Record<string, unknown>) {
+  return request('/predict/delay-risk', { method: 'POST', body: JSON.stringify(payload) }, 10000);
+}
+
+export function getWorkloadForecast(horizon = 7) {
+  return request(`/forecast/workload?horizon=${horizon}`, {}, 10000);
+}
