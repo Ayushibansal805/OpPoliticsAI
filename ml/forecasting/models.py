@@ -51,6 +51,7 @@ def prophet_model(holiday_share=None, mode="additive", changepoint_prior_scale=0
             future["hs"] = holiday_share.reindex(future["ds"]).fillna(0.0).to_numpy()
             m.add_regressor("hs")
         logging.getLogger("cmdstanpy").disabled = True
+        logging.getLogger("prophet").disabled = True
         m.fit(df)
         yhat = m.predict(future)["yhat"].to_numpy()
         return pd.Series(np.clip(yhat, 0, None), index=future["ds"])

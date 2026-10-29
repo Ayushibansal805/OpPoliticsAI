@@ -1,10 +1,10 @@
 # Model 3 — Workload Forecasting: Technical Report
 
 **Project:** OpsPilot AI  |  **Module:** `ml/forecasting/`  |  **Status:** optional model, implemented and evaluated
-**Companion notebook:** `notebooks/03_workload_forecasting.ipynb`
+**Companion notebook:** `model3_workload_forecasting.ipynb` (repo root)
 
-> All figures below come from a reproducible run of `python run_models.py` (training/test cut-off, folds and
-> hyper-parameters are fixed in the code and in `outputs/best_params.json`). Small differences (about ±0.3 MAE)
+> All figures below come from a reproducible run of `python -m ml.forecasting.run_models` (training/test cut-off, folds and
+> hyper-parameters are fixed in the code and in `ml/artifacts/forecasting/best_params.json`). Small differences (about ±0.3 MAE)
 > can appear on other machines because XGBoost/Prophet versions differ.
 
 ---
@@ -95,7 +95,7 @@ configurations**.
 **Reading the table**
 
 * The selected ensemble lowers CV MAE by about **20%** versus the strongest simple baseline (5.10 → 4.09) and wins
-  in all 6 folds in the reference run (the notebook recomputes this per fold from your own `outputs/`).
+  in all 6 folds in the reference run (the notebook recomputes this per fold from your own `ml/artifacts/forecasting/`).
 * On the final test the reduction is about **14%** (6.61 → 5.68). This is only 12 weeks and noisy; treat
   cross-validation as the primary evidence.
 * Tuning helped: Prophet 4.53 → 4.26 and XGBoost 4.44 → 4.33 CV MAE.
@@ -133,7 +133,7 @@ Model 3 writes a forecast table that the backend can serve without retraining:
 | `high_load_threshold` | threshold used |
 | `model` | model name/version |
 
-Files: `outputs/forecast_next_7d.csv`, `outputs/forecast_next_14d.csv`. The 7-day horizon is validated; the
+Files: `ml/artifacts/forecasting/forecast_next_7d.csv`, `ml/artifacts/forecasting/forecast_next_14d.csv`. The 7-day horizon is validated; the
 14-day horizon is produced by the same pipeline but has not been evaluated separately.
 
 **How it connects to Models 1 and 2 and the optimiser** (proposal for the team to agree on — the main README does
@@ -168,16 +168,18 @@ not yet define a forecast endpoint or table):
 ## 7. Reproducibility
 
 ```bash
-pip install -r requirements.txt            # plus: pip install ipykernel   (for the notebook)
-# place issues.csv and holidays_by_country.csv in data/raw/
-python run_models.py                       # ~5 min; writes everything in outputs/
-# optional: python tune.py                 # ~10 min; OVERWRITES outputs/best_params.json
-jupyter notebook notebooks/03_workload_forecasting.ipynb   # or open it in VS Code
+# from the repo root
+pip install -r ml/forecasting/requirements.txt
+# place issues.csv and holidays_by_country.csv in data/raw/   (data/raw/ is git-ignored; do not commit the dataset)
+python -m ml.forecasting.run_models        # ~5 min; writes everything in ml/artifacts/forecasting/
+# optional: python -m ml.forecasting.tune  # ~10 min; OVERWRITES ml/artifacts/forecasting/best_params.json
+# notebook: open model3_workload_forecasting.ipynb in VS Code / Jupyter (kernel = the environment above)
 ```
 
-Key files: `src/forecasting/{prepare_series,features,baselines,models,cv,evaluate}.py`, `tune.py`,
-`run_models.py`, `outputs/best_params.json`, `outputs/model_comparison.csv`, `outputs/cv_fold_scores.csv`,
-`outputs/surge_eval.csv`.
+Key files: `ml/forecasting/{prepare_series,features,baselines,models,cv,evaluate}.py`, `ml/forecasting/tune.py`,
+`ml/forecasting/run_models.py`, `ml/artifacts/forecasting/best_params.json`,
+`ml/artifacts/forecasting/model_comparison.csv`, `ml/artifacts/forecasting/cv_fold_scores.csv`,
+`ml/artifacts/forecasting/surge_eval.csv`.
 
 ## 8. Planned improvements
 
