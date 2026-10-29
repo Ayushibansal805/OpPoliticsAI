@@ -20,13 +20,20 @@ sequenceDiagram
   API-->>UI: Prediction record and result
 ```
 
+<<<<<<< HEAD
 The workload upload follows a separate, currently unauthenticated path: the browser posts CSV-derived records directly to FastAPI at `VITE_ML_BASE_URL/forecast/workload`. Forecast results are returned to the page and are not persisted in MongoDB. The page checks `/forecast/health` before enabling the forecast action.
 
+=======
+>>>>>>> origin/main
 ## Boundaries
 
 ### React client
 
+<<<<<<< HEAD
 The client owns navigation, accessible forms, theme state, loading/error/empty states, charts, and presentation. Authenticated API calls use `credentials: include` through one centralized typed API client. The workload CSV page calls the configured FastAPI service directly; the client does not connect to MongoDB or import Python code.
+=======
+The client owns navigation, accessible forms, theme state, loading/error/empty states, charts, and presentation. It uses `credentials: include` and one centralized typed API client. It does not connect to MongoDB or import Python code.
+>>>>>>> origin/main
 
 ### Express API
 

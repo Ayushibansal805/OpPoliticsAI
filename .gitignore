@@ -1,9 +1,12 @@
 Help Desk Tickets/
 venv/
+<<<<<<< HEAD
 .venv/
 .venv312/
 .venv-*/
 work/
+=======
+>>>>>>> origin/main
 node_modules/
 client/node_modules/
 server/node_modules/
@@ -17,3 +20,8 @@ __pycache__/
 .pytest_cache/
 .env
 /data/raw/
+<<<<<<< HEAD
+=======
+*.bak
+
+>>>>>>> origin/main

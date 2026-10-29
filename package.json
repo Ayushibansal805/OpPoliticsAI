@@ -4,14 +4,25 @@
   "version": "0.1.0",
   "description": "OpsPilot AI full-stack operations intelligence platform",
   "scripts": {
+<<<<<<< HEAD
     "install:all": "npm ci && npm --prefix server ci && npm --prefix client ci",
     "dev": "concurrently -k -n ML,RISK,API,WEB -c magenta,yellow,cyan,green \".venv/Scripts/python.exe -m uvicorn ml.resolution_api:app --reload --port 8000\" \".venv-delayrisk/Scripts/python.exe -m uvicorn ml.delay_risk_service:app --reload --port 8001\" \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
     "db:up": "docker compose up -d --wait mongo",
     "db:down": "docker compose down",
+=======
+    "install:all": "npm install && npm --prefix server install && npm --prefix client install",
+    "dev": "concurrently -n ML,API,WEB -c magenta,cyan,green \"venv\\Scripts\\python.exe -m uvicorn ml.resolution_api:app --reload --port 8000\" \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
+>>>>>>> origin/main
     "build": "npm --prefix server run build && npm --prefix client run build",
     "test": "npm --prefix server test"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"
+<<<<<<< HEAD
+=======
+  },
+  "dependencies": {
+    "all": "^0.0.0"
+>>>>>>> origin/main
   }
 }

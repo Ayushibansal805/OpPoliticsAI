@@ -3,11 +3,17 @@ import { requireAuth } from '../middleware/auth.js';
 import { asyncHandler, HttpError } from '../middleware/errorHandler.js';
 import { PredictionModel } from '../models/Prediction.js';
 import { databaseStatus } from '../config/database.js';
+<<<<<<< HEAD
 import { predictDelayRisk, predictResolution, forecastWorkload, MlServiceError } from '../services/mlService.js';
 import { listQuerySchema, resolutionPredictionSchema, triagePipelineSchema } from '../validators/schemas.js';
 import { z } from 'zod';
 import { requireRole } from '../middleware/auth.js';
 import { TicketModel } from '../models/Ticket.js';
+=======
+import { predictResolution, MlServiceError } from '../services/mlService.js';
+import { listQuerySchema, resolutionPredictionSchema } from '../validators/schemas.js';
+import { z } from 'zod';
+>>>>>>> origin/main
 
 const router = Router();
 router.use(requireAuth);
@@ -24,6 +30,7 @@ const mlResponseSchema = z.object({
   artifact_generated_at: z.string().optional(),
 });
 
+<<<<<<< HEAD
 const riskResponseSchema = z.object({
   risk_probability: z.number().finite().min(0).max(1),
   risk_category: z.enum(['low', 'medium', 'high']),
@@ -49,6 +56,8 @@ const workloadResponseSchema = z.object({
   })).min(7).max(14),
 });
 
+=======
+>>>>>>> origin/main
 const serialize = (prediction: any) => ({
   id: prediction._id.toString(),
   modelId: prediction.modelId,
@@ -90,6 +99,7 @@ router.post('/resolution-time', asyncHandler(async (req, res) => {
   }
 }));
 
+<<<<<<< HEAD
 router.post('/triage', requireRole('admin'), asyncHandler(async (req, res) => {
   requireDatabase();
   const input = triagePipelineSchema.parse(req.body);
@@ -166,6 +176,8 @@ router.post('/triage', requireRole('admin'), asyncHandler(async (req, res) => {
   }
 }));
 
+=======
+>>>>>>> origin/main
 router.get('/', asyncHandler(async (req, res) => {
   requireDatabase();
   const query = listQuerySchema.parse(req.query);
