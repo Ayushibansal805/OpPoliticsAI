@@ -5,6 +5,7 @@ import { HttpError } from './errorHandler.js';
 import { env } from '../config/env.js';
 import { databaseStatus } from '../config/database.js';
 import type { UserDocument } from '../models/User.js';
+import { ADMIN_OWNER_USERNAME } from '../security/adminPolicy.js';
 
 const COOKIE_NAME = 'ops_session';
 
@@ -51,6 +52,39 @@ export const requireAuth: RequestHandler = async (req, _res, next) => {
   } catch (error) {
     next(error);
   }
+};
+
+/**
+ * Restricts an already-authenticated request to the listed roles.
+ * Mount after requireAuth (for example, router.use(requireAuth, requireRole('admin'))).
+ * Roles remain string-based here so proposed roles can be added only when the
+ * User schema and provisioning policy are approved together.
+ */
+export function requireRole(...allowedRoles: string[]): RequestHandler {
+  return (req, _res, next) => {
+    if (!req.user) {
+      next(new HttpError(401, 'Authentication is required.', 'AUTH_REQUIRED'));
+      return;
+    }
+    if (!allowedRoles.includes(String(req.user.role))) {
+      next(new HttpError(403, 'You do not have permission to perform this action.', 'FORBIDDEN'));
+      return;
+    }
+    next();
+  };
+}
+
+/** Requires both a database-authenticated session, the Admin role, and the provisioned owner identity. */
+export const requireAdminOwner: RequestHandler = (req, _res, next) => {
+  if (!req.user) {
+    next(new HttpError(401, 'Authentication is required.', 'AUTH_REQUIRED'));
+    return;
+  }
+  if (String(req.user.role) !== 'admin' || String(req.user.username).trim().toLowerCase() !== ADMIN_OWNER_USERNAME) {
+    next(new HttpError(403, 'You do not have permission to perform this action.', 'FORBIDDEN'));
+    return;
+  }
+  next();
 };
 
 export { COOKIE_NAME, hashToken };

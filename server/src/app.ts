@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { env } from './config/env.js';
 import authRoutes from './routes/authRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import modelRoutes from './routes/modelRoutes.js';
 import predictionRoutes from './routes/predictionRoutes.js';
@@ -31,6 +32,7 @@ app.use(originGuard);
 
 app.use('/api/v1/health', healthRoutes);
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/models', modelRoutes);
 app.use('/api/v1/predictions', predictionRoutes);

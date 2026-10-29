@@ -48,6 +48,10 @@ Invoke-RestMethod http://localhost:5000/api/v1/health/ready
 
 The response sets the session cookie. `GET /auth/me` returns the public user when the cookie is valid. `POST /auth/logout` invalidates the current session and clears the cookie.
 
+## Admin identity
+
+`GET /admin/me` requires the authenticated session cookie, the database-loaded `admin` role, and the provisioned owner username `deepti10648`. A matching username without valid authentication does not grant access. The response confirms the current Admin identity for future client navigation; it does not replace server-side authorization on any Admin operation. No ticket or other Admin management APIs are currently implemented.
+
 ## Model metadata
 
 `GET /models/resolution-time/metadata` returns the actual categories exposed by the saved pipeline, derived fields, and evaluation artifact. The frontend uses the `fields.*.options` arrays to build its form.
