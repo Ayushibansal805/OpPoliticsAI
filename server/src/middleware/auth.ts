@@ -4,12 +4,7 @@ import { SessionModel } from '../models/Session.js';
 import { HttpError } from './errorHandler.js';
 import { env } from '../config/env.js';
 import { databaseStatus } from '../config/database.js';
-<<<<<<< HEAD
 import { normalizedRole, type AppRole, type UserDocument } from '../models/User.js';
-=======
-import type { UserDocument } from '../models/User.js';
-import { ADMIN_OWNER_USERNAME } from '../security/adminPolicy.js';
->>>>>>> origin/main
 
 const COOKIE_NAME = 'ops_session';
 
@@ -58,35 +53,16 @@ export const requireAuth: RequestHandler = async (req, _res, next) => {
   }
 };
 
-<<<<<<< HEAD
 export function requireRole(...roles: AppRole[]): RequestHandler {
   return (req, _res, next) => {
     if (!req.user) return next(new HttpError(401, 'Authentication is required.', 'AUTH_REQUIRED'));
     if (!roles.includes(normalizedRole(req.user))) return next(new HttpError(403, 'Your workspace role cannot perform this action.', 'ROLE_FORBIDDEN'));
-=======
-/**
- * Restricts an already-authenticated request to the listed roles.
- * Mount after requireAuth (for example, router.use(requireAuth, requireRole('admin'))).
- * Roles remain string-based here so proposed roles can be added only when the
- * User schema and provisioning policy are approved together.
- */
-export function requireRole(...allowedRoles: string[]): RequestHandler {
-  return (req, _res, next) => {
-    if (!req.user) {
-      next(new HttpError(401, 'Authentication is required.', 'AUTH_REQUIRED'));
-      return;
-    }
-    if (!allowedRoles.includes(String(req.user.role))) {
-      next(new HttpError(403, 'You do not have permission to perform this action.', 'FORBIDDEN'));
-      return;
-    }
->>>>>>> origin/main
     next();
   };
 }
 
-<<<<<<< HEAD
-=======
+const ADMIN_OWNER_USERNAME = (process.env.ADMIN_OWNER_USERNAME || 'admin').trim().toLowerCase();
+
 /** Requires both a database-authenticated session, the Admin role, and the provisioned owner identity. */
 export const requireAdminOwner: RequestHandler = (req, _res, next) => {
   if (!req.user) {
@@ -100,5 +76,4 @@ export const requireAdminOwner: RequestHandler = (req, _res, next) => {
   next();
 };
 
->>>>>>> origin/main
 export { COOKIE_NAME, hashToken };

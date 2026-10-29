@@ -1,13 +1,9 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { api } from '../services/api';
-import type { User } from '../types';
+import type { AppRole, User } from '../types';
 import { useTheme } from './ThemeContext';
 
-<<<<<<< HEAD
-type AuthContextValue = { user: User | null; loading: boolean; login: (email: string, password: string, remember: boolean) => Promise<void>; signup: (name: string, email: string, password: string, role: 'customer' | 'it_team') => Promise<void>; logout: () => Promise<void>; setUser: (user: User | null) => void };
-=======
-type AuthContextValue = { user: User | null; loading: boolean; login: (email: string, password: string, remember: boolean) => Promise<void>; signup: (name: string, email: string, password: string) => Promise<void>; logout: () => Promise<void>; setUser: (user: User | null) => void };
->>>>>>> origin/main
+type AuthContextValue = { user: User | null; loading: boolean; login: (email: string, password: string, remember: boolean, expectedRole: AppRole) => Promise<void>; signup: (name: string, email: string, password: string) => Promise<void>; logout: () => Promise<void>; setUser: (user: User | null) => void };
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -23,12 +19,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     loading,
     setUser,
-    login: async (email, password, remember) => { const result = await api.auth.login({ email, password, remember }); setUser(result.user); setTheme(result.user.themePreference); },
-<<<<<<< HEAD
-    signup: async (name, email, password, role) => { const result = await api.auth.signup({ name, email, password, role, termsAccepted: true }); setUser(result.user); setTheme(result.user.themePreference); },
-=======
+    login: async (email, password, remember, expectedRole) => { const result = await api.auth.login({ email, password, remember, expectedRole }); setUser(result.user); setTheme(result.user.themePreference); },
     signup: async (name, email, password) => { const result = await api.auth.signup({ name, email, password, termsAccepted: true }); setUser(result.user); setTheme(result.user.themePreference); },
->>>>>>> origin/main
     logout: async () => { await api.auth.logout().catch(() => undefined); setUser(null); },
   }), [loading, setTheme, user]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

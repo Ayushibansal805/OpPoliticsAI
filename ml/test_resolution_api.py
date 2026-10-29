@@ -1,19 +1,4 @@
 import unittest
-<<<<<<< HEAD
-
-from .resolution_api import PredictionRequest, runtime
-
-
-class ResolutionModelSmokeTest(unittest.TestCase):
-    def test_real_artifact_loads_and_returns_hours(self):
-        self.assertTrue(runtime.available)
-        result = runtime.predict(
-            PredictionRequest(
-                issue_created="2024-01-12T09:30:00Z",
-                issue_priority="High",
-                issue_type="Bug",
-                issue_proj="C00d3dzwj28av.ew8x3",
-=======
 import math
 
 from fastapi import HTTPException
@@ -53,14 +38,10 @@ class ResolutionModelSmokeTest(unittest.TestCase):
                 issue_priority=categories["issue_priority"][0],
                 issue_type=categories["issue_type"][0],
                 issue_proj=categories["issue_proj"][0],
->>>>>>> origin/main
             )
         )
         self.assertEqual(result["model_id"], "resolution-time")
         self.assertEqual(result["unit"], "hours")
-<<<<<<< HEAD
-        self.assertGreaterEqual(result["duration"], 0)
-=======
         self.assertEqual(result["model_version"], runtime.metadata["generated_at_utc"])
         self.assertGreaterEqual(result["duration"], 0)
         self.assertTrue(math.isfinite(result["duration"]))
@@ -96,7 +77,6 @@ class ResolutionModelSmokeTest(unittest.TestCase):
         with self.assertRaises(HTTPException) as context:
             predict_resolution(ResolutionPredictionRequest(**malformed))
         self.assertEqual(context.exception.status_code, 422)
->>>>>>> origin/main
 
     def test_unknown_category_is_rejected(self):
         with self.assertRaises(Exception):

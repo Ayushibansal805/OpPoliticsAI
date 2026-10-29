@@ -1,3 +1,4 @@
+
 """Leakage-safe features for the ML forecaster (XGBoost).
 
 Rule: a feature for target day T may only use actuals from days <= T - h0,

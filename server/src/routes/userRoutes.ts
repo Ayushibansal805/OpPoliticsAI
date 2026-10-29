@@ -1,20 +1,12 @@
 import { Router } from 'express';
-<<<<<<< HEAD
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { asyncHandler, HttpError } from '../middleware/errorHandler.js';
 import { publicUser, UserModel } from '../models/User.js';
 import { preferenceSchema, profileSchema, userRoleSchema } from '../validators/schemas.js';
-=======
-import { requireAuth } from '../middleware/auth.js';
-import { asyncHandler } from '../middleware/errorHandler.js';
-import { publicUser } from '../models/User.js';
-import { preferenceSchema, profileSchema } from '../validators/schemas.js';
->>>>>>> origin/main
 
 const router = Router();
 router.use(requireAuth);
 
-<<<<<<< HEAD
 router.get('/', requireRole('admin'), asyncHandler(async (_req, res) => {
   const users = await UserModel.find({}).sort({ createdAt: -1 }).lean();
   res.json({ success: true, data: { users: users.map((user: any) => ({ id: String(user._id), name: user.name, email: user.email, role: user.role === 'user' ? 'customer' : user.role, createdAt: user.createdAt })) } });
@@ -31,8 +23,6 @@ router.patch('/:userId/role', requireRole('admin'), asyncHandler(async (req, res
   res.json({ success: true, data: { user: publicUser(target) }, message: 'Workspace role updated.' });
 }));
 
-=======
->>>>>>> origin/main
 router.get('/me', asyncHandler(async (req, res) => {
   res.json({ success: true, data: { user: publicUser(req.user!) } });
 }));

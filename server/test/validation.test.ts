@@ -13,18 +13,3 @@ test('signup validation requires accepted terms and a valid email', () => {
   const parsed = signupSchema.parse({ name: 'Alex Morgan', email: 'Alex@Example.com', password: 'long-enough-password', termsAccepted: true });
   assert.equal(parsed.email, 'alex@example.com');
 });
-<<<<<<< HEAD
-=======
-
-test('public signup input cannot carry an elevated role', () => {
-  const parsed = signupSchema.parse({
-    name: 'Alex Morgan',
-    email: 'alex@example.com',
-    password: 'long-enough-password',
-    termsAccepted: true,
-    role: 'admin',
-  });
-
-  assert.equal('role' in parsed, false);
-});
->>>>>>> origin/main

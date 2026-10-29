@@ -48,13 +48,6 @@ Invoke-RestMethod http://localhost:5000/api/v1/health/ready
 
 The response sets the session cookie. `GET /auth/me` returns the public user when the cookie is valid. `POST /auth/logout` invalidates the current session and clears the cookie.
 
-<<<<<<< HEAD
-=======
-## Admin identity
-
-`GET /admin/me` requires the authenticated session cookie, the database-loaded `admin` role, and the provisioned owner username `deepti10648`. A matching username without valid authentication does not grant access. The response confirms the current Admin identity for future client navigation; it does not replace server-side authorization on any Admin operation. No ticket or other Admin management APIs are currently implemented.
-
->>>>>>> origin/main
 ## Model metadata
 
 `GET /models/resolution-time/metadata` returns the actual categories exposed by the saved pipeline, derived fields, and evaluation artifact. The frontend uses the `fields.*.options` arrays to build its form.
@@ -98,7 +91,6 @@ The duration in this example documents the response shape and is not a value ren
 ## History
 
 `GET /predictions?page=1&pageSize=20&modelId=resolution-time` returns user-scoped records, newest first, with pagination. `GET /predictions/:id` and `DELETE /predictions/:id` perform ownership checks. Dashboard aggregates use the same user scope.
-<<<<<<< HEAD
 
 ## Role-based tickets
 
@@ -145,5 +137,3 @@ The API also accepts ticket-level rows such as `{"issue_created":"2024-01-01T09:
 The response includes `history_start`, `history_end`, `history_days`, `ticket_total`, `forecast`, `recent_history`, and notes. Each forecast row includes `date`, `weekday`, `forecast`, `planning_low`, `planning_high`, `high_load_threshold`, and `high_load_flag`. `planning_low` and `planning_high` are variability-based planning estimates, not calibrated confidence limits. Forecasts are refit from the submitted data and are not persisted by the current workflow.
 
 Invalid schemas, timestamps, counts, or insufficient history return HTTP 422. Missing configuration or an inference failure returns HTTP 503. The present ML CORS allowlist is limited to `localhost:5173` and `127.0.0.1:5173`; configure it before hosting the client elsewhere.
-=======
->>>>>>> origin/main
