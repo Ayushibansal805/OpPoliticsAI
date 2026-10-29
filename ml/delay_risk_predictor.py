@@ -145,13 +145,18 @@ def _engineer_features(std_df: pd.DataFrame) -> pd.DataFrame:
     df["global_open_now"], df["global_created_24h"], df["global_created_7d"] = g["open_now"], g["created_24h"], g["created_7d"]
     df["global_delay_rate"], df["global_recent_rate"], df["global_recent_n"] = prior_all, recent_all, g["n_recent"]
 
+    # Operational congestion & arrival surge
+    daily_vel_all = np.maximum(g["created_7d"] / 7.0, 1.0)
+    df["global_congestion_ratio"] = g["open_now"] / daily_vel_all
+    df["global_surge_ratio"] = g["created_24h"] / daily_vel_all
+
     gs, gn = _recent_log_hours(t, res, log_hrs)
     glob_lh = np.where(gn > 0, gs / np.maximum(gn, 1), np.nan)
     glob_lh = pd.Series(glob_lh).ffill().bfill().fillna(0.0).to_numpy()
     df["global_recent_log_hrs"] = (gs + SMOOTHING * glob_lh) / (gn + SMOOTHING)
 
     for grp in groups:
-        cols = {k: np.zeros(n) for k in ["open_now", "created_24h", "created_7d", "prior_n", "delay_rate", "recent_n", "recent_rate", "gap_hrs", "recent_log_hrs"]}
+        cols = {k: np.zeros(n) for k in ["open_now", "created_24h", "created_7d", "prior_n", "delay_rate", "recent_n", "recent_rate", "gap_hrs", "recent_log_hrs", "congestion_ratio", "surge_ratio"]}
         for _, ix in df.groupby(grp).indices.items():
             b = _history_block(t[ix], res[ix], kn[ix], delayed[ix])
             cols["open_now"][ix], cols["created_24h"][ix], cols["created_7d"][ix] = b["open_now"], b["created_24h"], b["created_7d"]
@@ -166,6 +171,9 @@ def _engineer_features(std_df: pd.DataFrame) -> pd.DataFrame:
             cols["gap_hrs"][ix] = gap
             s_, n_ = _recent_log_hours(tg, res[ix], log_hrs[ix])
             cols["recent_log_hrs"][ix] = (s_ + SMOOTHING * df["global_recent_log_hrs"].to_numpy()[ix]) / (n_ + SMOOTHING)
+            grp_daily_vel = np.maximum(b["created_7d"] / 7.0, 1.0)
+            cols["congestion_ratio"][ix] = b["open_now"] / grp_daily_vel
+            cols["surge_ratio"][ix] = b["created_24h"] / grp_daily_vel
         for k, v in cols.items():
             df[f"{grp}_{k}"] = v
 
