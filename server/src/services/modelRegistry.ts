@@ -48,6 +48,24 @@ function artifactDir() {
 
 function readEvaluation() {
   try {
+    const v3Path = path.resolve(artifactDir(), '../../experiments/resolution_v3_evaluation.json');
+    if (fs.existsSync(v3Path)) {
+      const report = JSON.parse(fs.readFileSync(v3Path, 'utf8')) as Record<string, any>;
+      const metrics = report.comparison_test_metrics.log1p_hist_gradient_boosting;
+      const median = report.comparison_test_metrics.training_median;
+      return {
+        model: 'HistGradientBoostingRegressor with log1p target',
+        target: { definition: report.target_formula, unit: 'hours', included_rows: report.target_and_data_audit.raw_rows - report.excluded_missing_resolution_timestamp_n },
+        splits: Object.entries(report.splits).map(([split, value]: [string, any]) => ({
+          split, rows: value.n, first_created: value.start, last_created: value.end,
+        })),
+        validation: { model: 'Log1p HistGradientBoostingRegressor', validation_mae_hours: report.validation_model_metrics.mae_hours,
+          validation_rmse_hours: report.validation_model_metrics.rmse_hours, validation_r2: report.validation_model_metrics.r2 },
+        finalTest: { ...metrics, n_test: metrics.n },
+        testMedianBaseline: median,
+        baselineImprovementHours: median.mae_hours - metrics.mae_hours,
+      };
+    }
     const metricsPath = path.join(artifactDir(), 'metrics.json');
     const metrics = JSON.parse(fs.readFileSync(metricsPath, 'utf8')) as Record<string, any>;
     return {

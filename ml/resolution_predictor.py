@@ -16,8 +16,38 @@ import numpy as np
 import pandas as pd
 
 
+from sklearn.base import BaseEstimator, RegressorMixin, clone
+
+
+class TransformedTargetRegressorCustom(BaseEstimator, RegressorMixin):
+    """Log1p target transformer with non-negative clipping."""
+
+    def __init__(self, regressor=None):
+        self.regressor = regressor
+
+    def fit(self, X, y):
+        self.regressor_ = clone(self.regressor)
+        y_log = np.log1p(np.maximum(y, 0.0))
+        self.regressor_.fit(X, y_log)
+        return self
+
+    def predict(self, X):
+        pred_log = self.regressor_.predict(X)
+        pred = np.expm1(pred_log)
+        return np.maximum(pred, 0.0)
+
+
 DEFAULT_ARTIFACT_PATH = (
+    Path(__file__).resolve().parent / "artifacts" / "resolution" / "resolution_model_v3.joblib"
+)
+LEGACY_ARTIFACT_PATH = (
     Path(__file__).resolve().parent / "artifacts" / "resolution" / "resolution_model.joblib"
+)
+CANDIDATE_V2_PATH = (
+    Path(__file__).resolve().parent / "artifacts" / "resolution" / "candidates" / "resolution_model_v2_log1p.joblib"
+)
+V3_METADATA_PATH = (
+    Path(__file__).resolve().parent / "artifacts" / "resolution" / "resolution_model_v3_metadata.json"
 )
 RAW_INPUT_COLUMNS = ("issue_created", "issue_priority", "issue_type", "issue_proj")
 CATEGORICAL_FEATURES = ("issue_priority", "issue_type", "issue_proj")

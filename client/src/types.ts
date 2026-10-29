@@ -23,6 +23,7 @@ export interface ModelInfo {
 }
 
 export interface Evaluation {
+  model?: string;
   target?: { definition?: string; unit?: string; prediction_type?: string; included_rows?: number };
   splits?: Array<{ split: string; rows: number; first_created: string; last_created: string }>;
   validation?: { model?: string; validation_mae_hours?: number; validation_rmse_hours?: number; validation_r2?: number };
